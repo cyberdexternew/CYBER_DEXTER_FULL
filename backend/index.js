@@ -1,1 +1,60 @@
-console.log('CYBER DEXTER BACKEND');
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch";
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// ✅ HF API KEY FROM RENDER ENV
+const HF_KEY = process.env.HF_KEY;
+
+if (!HF_KEY) {
+  console.error("❌ HF_KEY is missing");
+}
+
+// Health check (VERY IMPORTANT for Render)
+app.get("/", (req, res) => {
+  res.send("CYBER DEXTER BACKEND IS RUNNING");
+});
+
+// Chat endpoint
+app.post("/chat", async (req, res) => {
+  try {
+    const { message, model } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const response = await fetch(
+      `https://api-inference.huggingface.co/models/${model || "HuggingFaceH4/zephyr-7b-beta"}`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${HF_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          inputs: message
+        })
+      }
+    );
+
+    const data = await response.json();
+    res.json(data);
+
+  } catch (error) {
+    console.error("❌ ERROR:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ✅ REQUIRED FOR RENDER (PORT FIX)
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, () => {
+  console.log(`✅ CYBER DEXTER backend running on port ${PORT}`);
+});
