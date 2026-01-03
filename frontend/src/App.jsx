@@ -1,1 +1,9 @@
-export default function App(){return <h1>CYBER DEXTER AI</h1>}
+import Chat from "./Chat";
+
+export default function App() {
+  return (
+    <div className="app">
+      <Chat />
+    </div>
+  );
+}
