@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// HF key from Render Environment
+// 🔐 HF KEY FROM RENDER ENV
 const HF_KEY = process.env.HF_KEY;
 
 // Health check
@@ -15,13 +15,13 @@ app.get("/", (req, res) => {
   res.send("CYBER DEXTER BACKEND IS RUNNING");
 });
 
-// Chat endpoint
+// 💬 CHAT ENDPOINT (NORMALIZED RESPONSE)
 app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
     if (!message) {
-      return res.status(400).json({ error: "Message missing" });
+      return res.json({ reply: "Message is empty" });
     }
 
     const hfRes = await fetch(
@@ -39,14 +39,27 @@ app.post("/chat", async (req, res) => {
     );
 
     const data = await hfRes.json();
-    res.json(data);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "AI error" });
+
+    // ✅ NORMALIZE ALL POSSIBLE RESPONSES
+    let reply = "No response from AI";
+
+    if (Array.isArray(data) && data[0]?.generated_text) {
+      reply = data[0].generated_text;
+    } else if (data.generated_text) {
+      reply = data.generated_text;
+    } else if (data.error) {
+      reply = "AI is loading, please try again in 30 seconds.";
+    }
+
+    res.json({ reply });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ reply: "Server error" });
   }
 });
 
-// REQUIRED for Render
+// ✅ REQUIRED FOR RENDER
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log("CYBER DEXTER backend running on port " + PORT);
